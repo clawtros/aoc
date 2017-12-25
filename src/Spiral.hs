@@ -55,8 +55,6 @@ initState until =
               }
 
 
-n = 361527
-
 nextState :: SpiralState -> SpiralState
 nextState state =
   let
@@ -112,6 +110,7 @@ defaultN def mayb =
   case mayb of
     Just v -> v
     Nothing -> def
+
 
 spiralV :: Int -> IO ()
 spiralV limit = do
