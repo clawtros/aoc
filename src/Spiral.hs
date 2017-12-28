@@ -3,6 +3,7 @@ module Spiral (spiralV) where
 import Data.List (length, unfoldr)
 import Data.Function ((&))
 import qualified Data.Map as Map
+import Control.Monad.State.Lazy
 
 
 neighbours :: (Int, Int) -> [(Int, Int)]
@@ -13,8 +14,7 @@ neighbours (x, y) =
 
 storeValueAt :: Map.Map (Int, Int) Int -> (Int, Int) -> Map.Map (Int, Int) Int
 storeValueAt storage position =
-  let
-    
+  let    
     value =
       neighbours position
       & map (\x -> Map.lookup x storage )
@@ -39,20 +39,33 @@ data SpiralState =
               , _y :: Int
               , _dx :: Int
               , _dy :: Int
-              , _until :: Int
               , _acc :: [(Int, Int)]
               }
 
 
-initState :: Int -> SpiralState
-initState until =
+initState :: SpiralState
+initState =
   SpiralState { _x = 0
               , _y = 0
               , _dx = 0
               , _dy = -1
               , _acc = []
-              , _until = until
               }
+
+
+valFromState :: SpiralState -> [(Int, Int)]
+valFromState =
+  _acc
+
+
+nextM :: Int -> State SpiralState [(Int, Int)]
+nextM 0 = do
+  s <- get
+  return $ _acc s
+nextM n = do
+  s <- get
+  put $ nextState s
+  nextM $ n - 1
 
 
 nextState :: SpiralState -> SpiralState
@@ -78,24 +91,12 @@ nextState state =
                 , _dx = newDx
                 , _dy = newDy
                 , _acc = _acc state ++ [(_x state, _y state)]
-                , _until = _until state
                 }
   
-
-doSpiral :: SpiralState -> [(Int, Int)]
-doSpiral state =
-  let
-    accu = _acc state
-  in
-    if length accu >= _until state then
-      accu
-    else
-      doSpiral $ nextState state
       
-
 spiral :: Int -> [(Int, Int)]
 spiral until =
-  doSpiral $ initState until
+  evalState (nextM until) initState
 
 
 populateMap :: Int -> Map.Map (Int, Int) Int

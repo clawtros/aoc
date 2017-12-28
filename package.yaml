@@ -27,7 +27,8 @@ library:
   dependencies:
   - text
   - containers
-
+  - mtl
+  
 executables:
   aoc-exe:
     main:                Main.hs
