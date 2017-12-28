@@ -28,6 +28,7 @@ library:
   - text
   - containers
   - mtl
+  - vector
   
 executables:
   aoc-exe:

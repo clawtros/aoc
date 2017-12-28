@@ -1,7 +1,11 @@
 module Jumper (main) where
 
 import Data.List
+import Control.Monad
+import Control.Monad.ST
 import Control.Monad.State.Lazy
+import qualified Data.Vector.Unboxed.Mutable as M
+import qualified Data.Vector.Unboxed as V
 
 
 replaceAt :: [a] -> Int -> (a -> a) -> [a]
@@ -27,44 +31,51 @@ solve2 value =
   value + (if value >= 3 then -1 else 1)
 
 
-data JumpState = JumpState { instructions :: [Int]
+data JumpState = JumpState { instructions :: V.Vector Int
                            , position :: Int
-                           , steps :: Int }
+                           , steps :: Int
+                           , goal :: Int }
   deriving (Show)
+
 
 nextState :: JumpState -> JumpState
 nextState s =
-  case nth (instructions s) (position s) of
-    Just v ->
-      let
-        ni = replaceAt (instructions s) (position s) solve2
-        np = (position s) + v
-        na = (steps s) + 1
-      in 
-        JumpState { instructions = ni
-                  , position = np
-                  , steps = na
-                  }
-    Nothing ->
-      initState (instructions s)
+  let
+    pos = position s
+    (ni, np) = 
+      runST $ do
+        is <- V.thaw $ instructions s
+        v <- M.read is pos
+        M.write is (solve2 v) pos
+        nv <- V.freeze is
+        return (nv, pos + v)
+
+    na = (steps s) + 1
+  in 
+    JumpState { instructions = ni
+              , position = np
+              , steps = na
+              , goal = goal s
+              }
   
 
 nextM :: State JumpState Int
 nextM = do
   s <- get
-  if (position s) < (length $ instructions s) then
+  if (position s) < (goal s) then
     do 
       put $ nextState s
       nextM
   else
-    do return $ steps s
+    return $ steps s
     
 
 initState :: [Int] -> JumpState
 initState instructions =
-  JumpState { instructions = instructions
+  JumpState { instructions = V.fromList instructions
             , position = 0
             , steps = 0
+            , goal = length instructions
             }
 
 
