@@ -1,4 +1,7 @@
-module Jumper () where
+module Jumper (main) where
+
+import Data.List
+import Control.Monad.State.Lazy
 
 
 replaceAt :: [a] -> Int -> (a -> a) -> [a]
@@ -24,26 +27,56 @@ solve2 value =
   value + (if value >= 3 then -1 else 1)
 
 
-doSolve :: [Int] -> Int -> Int -> Int
-doSolve instructions position acc = 
-  if position >= (length instructions) then
-    acc
+data JumpState = JumpState { instructions :: [Int]
+                           , position :: Int
+                           , steps :: Int }
+  deriving (Show)
+
+nextState :: JumpState -> JumpState
+nextState s =
+  case nth (instructions s) (position s) of
+    Just v ->
+      let
+        ni = replaceAt (instructions s) (position s) solve2
+        np = (position s) + v
+        na = (steps s) + 1
+      in 
+        JumpState { instructions = ni
+                  , position = np
+                  , steps = na
+                  }
+    Nothing ->
+      initState (instructions s)
+  
+
+nextM :: State JumpState Int
+nextM = do
+  s <- get
+  if (position s) < (length $ instructions s) then
+    do 
+      put $ nextState s
+      nextM
   else
-    case nth instructions position of
-      Just v ->
-        doSolve (replaceAt instructions position solve2) (position + v) (acc + 1)
-      Nothing ->
-        -1
+    do return $ steps s
+    
+
+initState :: [Int] -> JumpState
+initState instructions =
+  JumpState { instructions = instructions
+            , position = 0
+            , steps = 0
+            }
 
 
-solve :: [String] -> Int
-solve strings =
-  doSolve (map read strings) 0 0 
+solve :: [Int] -> Int
+solve instructions =
+  evalState nextM (initState instructions)
 
 
 main :: IO ()
 main = do
   fh <- readFile "data/input5"
   ls <- return $ lines fh
-  solution <- return $ solve ls
+  solution <- return $ solve $ map read ls
+  putStrLn $ show solution
   return ()

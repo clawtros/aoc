@@ -59,13 +59,14 @@ valFromState =
 
 
 nextM :: Int -> State SpiralState [(Int, Int)]
-nextM 0 = do
-  s <- get
-  return $ _acc s
-nextM n = do
-  s <- get
-  put $ nextState s
-  nextM $ n - 1
+nextM n | n < 0 = error "x must be positive"
+        | n == 0 = do
+            s <- get
+            return $ _acc s
+        | otherwise = do
+            s <- get
+            put $ nextState s
+            nextM $ n - 1
 
 
 nextState :: SpiralState -> SpiralState
