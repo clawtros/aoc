@@ -28,8 +28,9 @@ library:
   - text
   - containers
   - mtl
-  - vector
-  
+  - array
+  - monad-loops
+
 executables:
   aoc-exe:
     main:                Main.hs

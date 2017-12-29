@@ -1,6 +1,7 @@
 module Main where
 
-import Lib 
+import qualified Jumper
 
 main :: IO ()
-main = solve3
+main =
+  Jumper.main
